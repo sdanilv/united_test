@@ -1,0 +1,26 @@
+@import "Articles.module";
+
+@keyframes pulse {
+  0%, 100% {
+    background: gray;
+  }
+  50% {
+    background: lightgray;
+  }
+}
+
+.img {
+  height: 420px;
+  animation: pulse 1s infinite linear;
+  background: lightgray;
+  border-radius: 8px;
+}
+
+.text{
+  width: 100%;
+  height: 16px;
+  border-radius: 8px;
+  animation: pulse 1s infinite linear;
+  background: lightgray;
+  margin: 10px 0;
+}

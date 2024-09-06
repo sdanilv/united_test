@@ -1,0 +1,20 @@
+.list {
+  margin: 12px auto;
+  height: calc(100vh - 24px);
+  width: 800px;
+  overflow: auto;
+}
+
+.article{
+  border: 1px solid lightgray;
+  padding: 8px;
+  margin-bottom: 12px;
+  margin-right: 12px;
+  border-radius: 8px;
+  content-visibility: auto;
+  contain-intrinsic-height: auto 500px;
+}
+
+.img{
+  width: 100%;
+}
