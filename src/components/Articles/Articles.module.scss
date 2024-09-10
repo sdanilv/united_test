@@ -1,11 +1,21 @@
-.list {
+.list_container {
   margin: 12px auto;
   height: calc(100vh - 24px);
   width: 800px;
   overflow: auto;
 }
 
-.article{
+.list {
+  position: relative;
+
+  & > div {
+    width: 100%;
+    position: absolute;
+    will-change: transform;
+  }
+}
+
+.article {
   border: 1px solid lightgray;
   padding: 8px;
   margin-bottom: 12px;
@@ -15,6 +25,6 @@
   contain-intrinsic-height: auto 500px;
 }
 
-.img{
+.img {
   width: 100%;
 }
