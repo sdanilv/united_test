@@ -1,12 +1,20 @@
-import React, { CSSProperties, useEffect, useRef, useState } from "react";
+import React, {
+  CSSProperties,
+  UIEventHandler,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import classes from "./Articles.module.scss";
-import { LoadedArticle } from "components/Articles/Loaded";
-import { Article } from "components/Articles/Article";
-import { useLoadArticles } from "components/Articles/useLoadArticles";
+import { LoadedArticle } from "./Loaded";
+import { Article } from "./Article";
+import { useLoadArticles } from "./useLoadArticles";
+import { useVirtualization } from "./useVirtualization";
 
 const LOADER_COUNT = 15;
 const LOADER_SIZE = 530;
-const LOADERS_SIZE = LOADER_SIZE * LOADER_COUNT;
+const defaultLength = LOADER_SIZE * LOADER_COUNT;
 
 const getStyle = (shift: number): CSSProperties => ({
   transform: `translateY(${shift}px)`,
@@ -17,58 +25,32 @@ const Loaders = () =>
     <LoadedArticle key={index} />
   ));
 
+let timer: NodeJS.Timeout;
+
 export const Articles = () => {
   const [page, setPage] = useState(0);
   const listEndRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
-
-  const nextPageObserver = useRef(
-    new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          setPage((page) => page + 1);
-        }
-      },
-      { rootMargin: "-800px 0px 800px 0px" },
-    ),
-  );
-  const [cache, setCache] = useState<Array<number>>([0]);
+  const { cache, listLength, creatItemHandler } = useVirtualization({
+    defaultLength,
+  });
   const articles = useLoadArticles({ cache, page, listRef });
-  const [listLength, setListLength] = useState(LOADERS_SIZE);
   const [scroll, setScroll] = useState(0);
-
-  const mutationObserver = useRef<ResizeObserver>(
-    new ResizeObserver((entries) => {
-      entries.forEach(({ target, borderBoxSize }) => {
-        const index = +target.getAttribute("data-index");
-        const size = borderBoxSize[0].blockSize;
-
-        if (size) {
-          setCache((cache) => {
-            const newCache = [...cache];
-            const next = index + 1;
-
-            if (newCache[next]) {
-              const delta = size + newCache[index] - newCache[next];
-
-              if (delta <= 0) return cache;
-              setListLength((listLength) => listLength + delta);
-
-              for (let j = next; j < newCache.length; j++) {
-                newCache[j] = newCache[j] + delta;
-              }
-            } else {
-              setListLength((listLength) => listLength + size);
-
-              if (!newCache[index]) newCache[index] = newCache[index - 1];
-              newCache[next] = index ? size + newCache[index] : size;
-            }
-            return newCache;
-          });
-        } else mutationObserver.current.unobserve(target);
-      });
+  const nextPageObserver = useRef(
+    new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        setPage((page) => page + 1);
+      }
     }),
   );
+
+  const scrollHandler: UIEventHandler = useCallback(({ currentTarget }) => {
+    if (!timer)
+      timer = setTimeout(() => {
+        setScroll(currentTarget.scrollTop);
+        timer = undefined;
+      }, 80);
+  }, []);
 
   useEffect(() => {
     const observer = nextPageObserver.current;
@@ -83,14 +65,9 @@ export const Articles = () => {
     <div
       className={classes.list_container}
       ref={listRef}
-      onScroll={({ currentTarget }) => {
-        setScroll(currentTarget.scrollTop);
-      }}
+      onScroll={scrollHandler}
     >
-      <div
-        style={{ height: listLength, position: "relative" }}
-        className={classes.list}
-      >
+      <div style={{ height: listLength }} className={classes.list}>
         {articles.map((article, index) => {
           const shift = cache[index];
           if (
@@ -105,18 +82,14 @@ export const Articles = () => {
               style={getStyle(shift)}
               key={index}
               data-index={index}
-              ref={(elem) => {
-                if (elem) {
-                  mutationObserver.current.observe(elem);
-                }
-              }}
+              ref={creatItemHandler}
             >
-              <Article article={article} key={article.id}/>
+              <Article article={article} />
             </div>
           );
         })}
         <div style={getStyle(cache.at(-1))} ref={listEndRef}>
-          <Loaders/>
+          <Loaders />
         </div>
       </div>
     </div>
