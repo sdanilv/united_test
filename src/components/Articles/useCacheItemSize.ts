@@ -3,7 +3,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 type Props = {
   defaultLength?: number;
 };
-export const useVirtualization = ({ defaultLength }: Props) => {
+
+export const useCacheItemSize = ({ defaultLength }: Props) => {
   const [cache, setCache] = useState<Array<number>>([0]);
   const [listLength, setListLength] = useState(defaultLength);
 
@@ -12,6 +13,7 @@ export const useVirtualization = ({ defaultLength }: Props) => {
       entries.forEach(({ target, borderBoxSize }) => {
         const index = +target.getAttribute("data-index");
         const size = borderBoxSize[0].blockSize;
+
 
         if (size) {
           setCache((cache) => {
@@ -30,7 +32,9 @@ export const useVirtualization = ({ defaultLength }: Props) => {
             } else {
               setListLength((listLength) => listLength + size);
 
-              if (!newCache[index]) newCache[index] = newCache[index - 1];
+              if (newCache[index] === undefined) {
+                newCache[index] = newCache[index - 1];
+              }
               newCache[next] = index ? size + newCache[index] : size;
             }
             return newCache;

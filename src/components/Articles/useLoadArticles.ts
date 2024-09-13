@@ -1,34 +1,32 @@
-import { MutableRefObject, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { articleApi } from "api/article";
 import { ArticleT } from "api/article/types";
 
-const COUNT = 15;
+const COUNT = 10;
 
-type Props = {
-  page: number;
-  cache: number[];
-  listRef: MutableRefObject<HTMLDivElement>;
-};
-
-export const useLoadArticles = ({ page, cache, listRef }: Props) => {
-  const [loading, setLoading] = useState(false);
+export const useLoadArticles = () => {
+  const loading = useRef(false);
   const [articles, setArticles] = useState<(ArticleT | null)[]>([]);
+  const [page, setPage] = useState(0);
 
-  useEffect(() => {
-    setLoading(true);
-    console.log("=>setLoading");
-
-    if (!loading) {
+  const moreArticlesHandler = useCallback( () => {
+    if (!loading.current) {
+      loading.current = true;
+      setPage((page) => page + 1);
       articleApi
         .all({ offset: page * COUNT, limit: COUNT })
         .then(({ data }) => {
           setArticles((articles) => [...articles, ...data.results]);
-          setLoading(false);
+          loading.current = false;
         })
         .catch(() => {});
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
-  return articles;
+  useEffect(() => {
+    moreArticlesHandler();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return { articles, moreArticlesHandler };
 };

@@ -1,65 +1,30 @@
-import React, {
-  CSSProperties,
-  UIEventHandler,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import React, { CSSProperties, useRef } from "react";
 import classes from "./Articles.module.scss";
 import { LoadedArticle } from "./Loaded";
 import { Article } from "./Article";
 import { useLoadArticles } from "./useLoadArticles";
-import { useVirtualization } from "./useVirtualization";
+import { useCacheItemSize } from "components/Articles/useCacheItemSize";
+import { usePerformScrollAction } from "./useScroll";
 
-const LOADER_COUNT = 15;
+const LOADER_COUNT = 5;
 const LOADER_SIZE = 530;
 const defaultLength = LOADER_SIZE * LOADER_COUNT;
+const VIRTUALIZATION_OVERSCAN = 1000;
 
 const getStyle = (shift: number): CSSProperties => ({
   transform: `translateY(${shift}px)`,
 });
 
-const Loaders = () =>
-  Array.from({ length: LOADER_COUNT }).map((_, index) => (
-    <LoadedArticle key={index} />
-  ));
-
-let timer: NodeJS.Timeout;
+const Loaders = () => Array.from({ length: LOADER_COUNT }).map((_, index) => (<LoadedArticle key={index} />));
 
 export const Articles = () => {
-  const [page, setPage] = useState(0);
-  const listEndRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
-  const { cache, listLength, creatItemHandler } = useVirtualization({
-    defaultLength,
+  const { cache, listLength, creatItemHandler } = useCacheItemSize({ defaultLength });
+  const { articles, moreArticlesHandler } = useLoadArticles();
+  const { scrollHandler, scroll } = usePerformScrollAction({
+    action: moreArticlesHandler,
+    offset: defaultLength,
   });
-  const articles = useLoadArticles({ cache, page, listRef });
-  const [scroll, setScroll] = useState(0);
-  const nextPageObserver = useRef(
-    new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) {
-        setPage((page) => page + 1);
-      }
-    }),
-  );
-
-  const scrollHandler: UIEventHandler = useCallback(({ currentTarget }) => {
-    if (!timer)
-      timer = setTimeout(() => {
-        setScroll(currentTarget.scrollTop);
-        timer = undefined;
-      }, 80);
-  }, []);
-
-  useEffect(() => {
-    const observer = nextPageObserver.current;
-    observer.observe(listEndRef.current);
-
-    return () => {
-      if (observer) observer.disconnect();
-    };
-  }, []);
 
   return (
     <div
@@ -71,8 +36,8 @@ export const Articles = () => {
         {articles.map((article, index) => {
           const shift = cache[index];
           if (
-            shift + 1000 < scroll ||
-            shift - 1000 > scroll + window.innerHeight
+            shift + VIRTUALIZATION_OVERSCAN < scroll ||
+            shift - VIRTUALIZATION_OVERSCAN > scroll + window.innerHeight
           ) {
             return null;
           }
@@ -88,7 +53,7 @@ export const Articles = () => {
             </div>
           );
         })}
-        <div style={getStyle(cache.at(-1))} ref={listEndRef}>
+        <div style={getStyle(cache.at(-1))}>
           <Loaders />
         </div>
       </div>
