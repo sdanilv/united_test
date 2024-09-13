@@ -1,0 +1,21 @@
+@keyframes fade-on {
+  0%,
+  20% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.list {
+  position: relative;
+}
+
+.item {
+  width: 100%;
+  position: absolute;
+  will-change: transform;
+  opacity: 1;
+  animation: fade-on 0.3s linear;
+}

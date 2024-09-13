@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 type Props = {
-  defaultLength?: number;
+  defaultHeight?: number;
 };
 
-export const useCacheItemSize = ({ defaultLength }: Props) => {
+export const useCacheItemSize = ({ defaultHeight }: Props) => {
   const [cache, setCache] = useState<Array<number>>([0]);
-  const [listLength, setListLength] = useState(defaultLength);
+  const [listHeight, setListHeight] = useState(defaultHeight);
 
   const mutationObserver = useRef<ResizeObserver>(
     new ResizeObserver((entries) => {
@@ -24,13 +24,13 @@ export const useCacheItemSize = ({ defaultLength }: Props) => {
               const delta = size + newCache[index] - newCache[next];
 
               if (delta <= 0) return cache;
-              setListLength((listLength) => listLength + delta);
+              setListHeight((listLength) => listLength + delta);
 
               for (let j = next; j < newCache.length; j++) {
                 newCache[j] = newCache[j] + delta;
               }
             } else {
-              setListLength((listLength) => listLength + size);
+              setListHeight((listLength) => listLength + size);
 
               if (newCache[index] === undefined) {
                 newCache[index] = newCache[index - 1];
@@ -57,5 +57,5 @@ export const useCacheItemSize = ({ defaultLength }: Props) => {
     };
   }, []);
 
-  return { cache, listLength, creatItemHandler };
+  return { cache, listHeight, creatItemHandler };
 };
